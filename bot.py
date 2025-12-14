@@ -33,18 +33,38 @@ async def start_handler(message: Message):
     user_full_name = message.from_user.full_name
     logging.info(f'Пользователь {user_id=} {user_full_name=} запустил бота {time.asctime()}')
     await message.reply(f'Привет, {user_full_name}, я буду напоминать тебе о кодинге!')
+    asyncio.create_task(send_reminders(user_id, user_name))
 
-    for i in range(7):
-        await asyncio.sleep(60*60*24)
-        try:
-            await bot.send_message(user_id, MSG.format(user_name))
-            logging.info(f'Отправлено напоминание в {i+1}/7 дней')
-        except Exception as e:
-            logging.error(f'Ошибка при отправке сообщения: {e}')
+
+async def send_reminders(user_id: int, user_name: str):
+    try:
+        for i in range(7):
+            await asyncio.sleep(60)
+            # await asyncio.sleep(60*60*24)
+            try:
+                await bot.send_message(user_id, MSG.format(user_name))
+                logging.info(f'Отправлено напоминание в день {i+1}/7 пользователю {user_name}')
+            except Exception as e:
+                logging.error(f'Ошибка при отправке сообщения: {e}')
+                break
+        logging.info(f'Напоминания завершены для пользователя {user_name}')
+        await bot.send_message(user_id, f'{user_name}, неделя напоминаний завершена!')
+    except asyncio.CancelledError:
+        logging.info(f'Напоминания отменены для пользователя {user_name}')
+    except Exception as e:
+        logging.error(f'Ошибка в задаче напоминаний: {e}')
 
 
 async def main():
-    await dp.start_polling(bot)
+    logging.info('Запуск бота...')
+    try:
+        await dp.start_polling(bot)
+    except KeyboardInterrupt:
+        logging.info('Бот остановлен пользователем')
+    except Exception as e:
+        logging.error(f'Ошибка при запуске бота: {e}')
+    finally:
+        await bot.session.close()
 
 
 if __name__ == '__main__':
