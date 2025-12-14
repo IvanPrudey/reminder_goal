@@ -25,6 +25,8 @@ MSG = '{}, ты сегодня кодил?'
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+active_users = {}
+
 
 @dp.message(Command('start'))
 async def start_handler(message: Message):
@@ -53,6 +55,17 @@ async def send_reminders(user_id: int, user_name: str):
         logging.info(f'Напоминания отменены для пользователя {user_name}')
     except Exception as e:
         logging.error(f'Ошибка в задаче напоминаний: {e}')
+
+
+@dp.message(Command('stop'))
+async def stop_handler(message: Message):
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
+
+    if user_id in active_users:
+        await message.reply(f'{user_name}, напоминания остановлены!')
+    else:
+        await message.reply(f'{user_name}, у Вас нет активных напоминаний.')
 
 
 async def main():
