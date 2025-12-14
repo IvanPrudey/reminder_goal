@@ -68,6 +68,16 @@ async def stop_handler(message: Message):
         await message.reply(f'{user_name}, у Вас нет активных напоминаний.')
 
 
+@dp.message(Command('status'))
+async def status_handler(message: Message):
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
+    if user_id in active_users:
+        await message.reply(f'{user_name}, Ваши напоминания активны!')
+    else:
+        await message.reply(f'{user_name}, у Вас нет активных напоминаний! Используйте /start для начала.')
+
+
 async def main():
     logging.info('Запуск бота...')
     try:
