@@ -34,9 +34,16 @@ async def start_handler(message: Message):
     user_name = message.from_user.first_name
     user_full_name = message.from_user.full_name
     logging.info(f'Пользователь {user_id=} {user_full_name=} запустил бота {time.asctime()}')
+    if user_id in active_users:
+        await message.reply(f'{user_full_name}, у тебя уже есть активные напоминания! Используй /stop чтобы остановить их.')
+        return
     await message.reply(f'Привет, {user_full_name}, я буду напоминать тебе о кодинге!')
-    asyncio.create_task(send_reminders(user_id, user_name))
-
+    task = asyncio.create_task(send_reminders(user_id, user_name))
+    active_users[user_id] = {
+        'task': task,
+        'user_name': user_name
+    }
+    logging.info(f'Создана задача напоминаний для пользователя {user_name} (ID: {user_id})')
 
 async def send_reminders(user_id: int, user_name: str):
     try:
