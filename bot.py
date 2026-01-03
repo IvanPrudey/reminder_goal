@@ -80,9 +80,17 @@ async def stop_handler(message: Message):
     user_name = message.from_user.first_name
 
     if user_id in active_users:
+        user_data = active_users[user_id]
+        task = user_data['task']
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
         await message.reply(f'{user_name}, напоминания остановлены!')
+        logging.info(f'Напоминания остановлены для пользователя {user_name}')
     else:
-        await message.reply(f'{user_name}, у Вас нет активных напоминаний.')
+        await message.reply(f'{user_name}, у тебя нет активных напоминаний.')
 
 
 @dp.message(Command('status'))
