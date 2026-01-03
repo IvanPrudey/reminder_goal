@@ -45,23 +45,33 @@ async def start_handler(message: Message):
     }
     logging.info(f'Создана задача напоминаний для пользователя {user_name} (ID: {user_id})')
 
+
 async def send_reminders(user_id: int, user_name: str):
     try:
         for i in range(7):
             await asyncio.sleep(60)
             # await asyncio.sleep(60*60*24)
+            if user_id not in active_users:
+                logging.info(f'Задача напоминаний прервана для пользователя {user_name}')
+                return
             try:
                 await bot.send_message(user_id, MSG.format(user_name))
                 logging.info(f'Отправлено напоминание в день {i+1}/7 пользователю {user_name}')
             except Exception as e:
                 logging.error(f'Ошибка при отправке сообщения: {e}')
+                if user_id in active_users:
+                    del active_users[user_id]
                 break
         logging.info(f'Напоминания завершены для пользователя {user_name}')
         await bot.send_message(user_id, f'{user_name}, неделя напоминаний завершена!')
     except asyncio.CancelledError:
         logging.info(f'Напоминания отменены для пользователя {user_name}')
+        await bot.send_message(user_id, f'{user_name}, напоминания остановлены!')
     except Exception as e:
-        logging.error(f'Ошибка в задаче напоминаний: {e}')
+        logging.error(f'Ошибка в задаче напоминаний для {user_name}: {e}')
+    finally:
+        if user_id in active_users:
+            del active_users[user_id]
 
 
 @dp.message(Command('stop'))
