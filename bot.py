@@ -98,9 +98,20 @@ async def status_handler(message: Message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
     if user_id in active_users:
-        await message.reply(f'{user_name}, Ваши напоминания активны!')
+        user_data = active_users[user_id]
+        task = user_data['task']
+        if task.done():
+            status = "завершены"
+            del active_users[user_id]
+        elif task.cancelled():
+            status = "отменены"
+        else:
+            status = "активны"
+        await message.reply(f'{user_name}, твои напоминания {status}!')
+        logging.info(f'Пользователь {user_name} запросил статус: напоминания {status}')
     else:
-        await message.reply(f'{user_name}, у Вас нет активных напоминаний! Используйте /start для начала.')
+        await message.reply(f'{user_name}, у тебя нет активных напоминаний! Используй /start для начала.')
+        logging.info(f'Пользователь {user_name} запросил статус: напоминаний нет')
 
 
 async def main():
@@ -112,6 +123,15 @@ async def main():
     except Exception as e:
         logging.error(f'Ошибка при запуске бота: {e}')
     finally:
+        logging.info('Отмена всех активных задач...')
+        for user_id, user_data in list(active_users.items()):
+            task = user_data['task']
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
         await bot.session.close()
 
 
